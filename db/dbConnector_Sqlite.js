@@ -151,7 +151,6 @@ async function checksentemails(user_id) {
     // 关闭数据库连接
     await client.close();
   }
-
 }
 //查看联系人
 async function checkContacts(user_id) {
@@ -184,6 +183,26 @@ async function checkContacts(user_id) {
   }
 }
 
+async function getReceiver(receivername) {
+  const client = new MongoClient(uri);
+
+  try {
+    await client.connect();
+    const db = client.db(databaseName);
+    const userCollection = db.collection("user");
+
+    const query = { 'username': receivername };
+    const receiver = await userCollection.findOne(query);
+
+    return receiver;
+  } catch (error) {
+    console.error('Error finding receiver:', error);
+  } finally {
+    // 关闭数据库连接
+    await client.close();
+  }
+}
+
 //发送邮件
 async function sendemail(title, sender_id, created_time, sending_time, content,  receiver_id) {
   const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -194,14 +213,17 @@ async function sendemail(title, sender_id, created_time, sending_time, content, 
     const db = client.db(databaseName);
     const collection = db.collection('email');
 
+    const newObjectId = new ObjectId();
+
     // 创建邮件文档对象
     const emailDocument = {
+      id: newObjectId,
       title: title,
-      sender_id: ObjectId(sender_id), // 确保 sender_id 是 ObjectId
+      sender_id: new ObjectId(sender_id), // 确保 sender_id 是 ObjectId
       created_time: new Date(created_time),
       sending_time: new Date(sending_time),
       content: content,
-      receiver_id: ObjectId(receiver_id) // 确保 receiver_id 是 ObjectId
+      receiver_id: new ObjectId(receiver_id) // 确保 receiver_id 是 ObjectId
     };
 
     // 插入邮件文档到 emails 集合
@@ -217,6 +239,25 @@ async function sendemail(title, sender_id, created_time, sending_time, content, 
   }
 }
 
+//查看邮件
+async function findEmail(email_id) {
+  const client = new MongoClient(uri);
+  
+  try {
+    // 连接到 MongoDB
+    await client.connect();
+    const db = client.db(databaseName);
+    const emailsCollection = db.collection('email');
+
+    const email = await emailsCollection.findOne({ id: new ObjectId(email_id) });
+
+    return email;
+  } finally {
+    await client.close();
+    console.log('Connection closed');
+  }
+}
+
 
 module.exports = {
   verifyLogin,
@@ -225,4 +266,6 @@ module.exports = {
   checksentemails,
   checkContacts,
   sendemail,
+  findEmail,
+  getReceiver,
 }

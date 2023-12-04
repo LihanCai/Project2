@@ -1,6 +1,6 @@
 let express = require("express");
 let router = express.Router();
-const { queryRecordsNotModified,getReceiver,sendemail,checkContacts,checkFolders,deleteEmails,checksentemails,checktrashemails,checkDeletedemails,findemail, checkDrafts, checkReceivedEmails,verifyLogin } = require("../db/dbConnector_Sqlite.js");
+const { getReceiver,sendemail,checkContacts,checksentemails,findEmail, checkDrafts, checkReceivedEmails,verifyLogin } = require("../db/dbConnector_Sqlite.js");
 
 /* GET home page. */
 router.get("/", async function (req, res) {
@@ -94,7 +94,7 @@ router.get('/detailedemail', async function (req, res) {
   // 获取邮件的 ID
   const emailId = req.query.emailid;
   console.log(emailId);
-  const email = await findemail(emailId);
+  const email = await findEmail(emailId);
 
   // 使用邮件 ID 查询特定邮件的详细信息
   // 这里可以从数据库中查询或者使用您的数据模型
@@ -185,10 +185,10 @@ router.post('/sendemail',async function(req, res, next) {
   // 使用数据库模块进行登录验证
   const { receiver, title, content } = req.body;
   const obj = await getReceiver(receiver);
-  const receiver_id = obj.user_id;
+  const receiver_id = obj.id;
   console.log(receiver_id);
-  const created_time = new Date().toISOString(); // 创建邮件的时间
-  const sending_time = new Date().toISOString(); // 发送邮件的时间，这里假设创建和发送时间是相同的
+  const created_time = new Date(); // 创建邮件的时间
+  const sending_time = new Date(); // 发送邮件的时间，这里假设创建和发送时间是相同的
   const email = await sendemail(title, userid, created_time, sending_time, content,  receiver_id);
   // 渲染邮件页面，并将邮件数据传递给视图
   res.render('writingemail', {currentPage: 'writingemail'})
