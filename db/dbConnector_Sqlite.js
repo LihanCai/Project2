@@ -50,14 +50,37 @@ async function checkReceivedEmails(user_id) {
     const db = client.db(databaseName);
     const emailsCollection = db.collection('email');
 
-    // 创建查询条件，将字符串 ID 转换为 ObjectId
-    const query = { 'receiver_id': new ObjectId(user_id) };
+     // 创建查询条件，将字符串 ID 转换为 ObjectId
+     const query = { 'receiver_id': new ObjectId(user_id) };
 
-    // 执行查询操作
-    const emails = await emailsCollection.find(query).toArray();
-
-    // console.log(emails); // 打印查询结果
-    return emails;
+     // 执行查询操作，并关联 folders
+     const emails = await emailsCollection.aggregate([
+       { $match: query },
+       {
+         $lookup: {
+           from: 'folders',
+           localField: 'id',
+           foreignField: 'email_id',
+           as: 'folders'
+         }
+       },
+       {
+         $match: {
+           'folders': {
+              $elemMatch: {
+                'foldername': 'sent'
+              }
+           }
+         }
+       },
+       {
+         $project: {
+           folders: 0 // 排除 folders 字段，如果不需要返回
+         }
+       }
+     ]).toArray();
+    //  console.log(emails);
+     return emails;
   } catch (error) {
     console.error('Error finding emails:', error);
   } finally {
@@ -87,7 +110,7 @@ async function checkDrafts(user_id) {
     // 然后，使用这些 email_id 查询 emails 集合
     const emailsQuery = { 'id': { $in: emailIds } };
     const emails = await emailsCollection.find(emailsQuery).toArray();
-    console.log(emails); // 打印查询结果
+    // console.log(emails); // 打印查询结果
 
     return emails;
   } catch (error) {
@@ -114,12 +137,12 @@ async function checksentemails(user_id) {
 
     // 从 folders 文档中提取所有的 email_id
     const emailIds = folders.map(folder => folder.email_id);
-    console.log(emailIds); // 打印查询结果
+    // console.log(emailIds); // 打印查询结果
 
     // 然后，使用这些 email_id 查询 emails 集合
     const emailsQuery = { 'id': { $in: emailIds } };
     const emails = await emailsCollection.find(emailsQuery).toArray();
-    console.log(emails); // 打印查询结果
+    // console.log(emails); // 打印查询结果
 
     return emails;
   } catch (error) {
@@ -141,15 +164,18 @@ async function checkContacts(user_id) {
 
     // 首先，根据 user_id 查找对应的contacts
     const user = await contactsCollection.findOne({ 'id': new ObjectId(user_id) });
-    const contactIds = user.contacts;
-    console.log(contactIds);
+    console.log(user.contacts);
+    if (user) {
+      const contactsQuery = { 'id': { $in: user.contacts } };
 
-    /// 接着，使用这些 ID 查询相同集合中的联系人详细信息
-    const contactsQuery = { 'id': { $in: contactIds } };
-    const contactsDetails = await contactsCollection.find(contactsQuery).toArray();
+      const userContactsDetails = await contactsCollection.find(contactsQuery).toArray();
 
-    console.log(contactsDetails);
-    return contactsDetails;
+      // console.log('User Contacts Details:', userContactsDetails);
+      return userContactsDetails;
+
+    } else {
+      console.log('User not found');
+    }
   } catch (error) {
     console.error('Error finding draft emails:', error);
   } finally {
@@ -190,6 +216,7 @@ async function sendemail(title, sender_id, created_time, sending_time, content, 
     await client.close();
   }
 }
+
 
 module.exports = {
   verifyLogin,

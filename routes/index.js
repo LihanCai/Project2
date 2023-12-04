@@ -27,7 +27,7 @@ router.post('/login', async function(req, res, next) {
   if (user) {
     // 登录成功，可以重定向到其他页面
     req.session.userId = user.id;
-    console.log(req.session.userId);
+    // console.log(req.session.userId);
     res.redirect('/main');
   } else {
     // 登录失败，显示错误消息
@@ -173,9 +173,9 @@ router.get('/contacts',async function(req, res, next) {
   const userid  = req.session.userId;
   // 使用数据库模块进行登录验证
   const contacts = await checkContacts(userid);
-  // console.log(emails);
+  console.log(contacts);
   // 渲染邮件页面，并将邮件数据传递给视图
-res.render('contacts', {contacts: contacts})
+  res.render('contacts', {contacts: contacts})
 })
 
 // send email
