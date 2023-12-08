@@ -1,6 +1,6 @@
 let express = require("express");
 let router = express.Router();
-const { getReceiver,sendemail,checkContacts,checksentemails,findEmail, checkDrafts, checkReceivedEmails,verifyLogin } = require("../db/dbConnector_Sqlite.js");
+const { deleteEmails,getReceiver,sendemail,checkContacts,checksentemails,findEmail, checkDrafts, checkReceivedEmails,verifyLogin } = require("../db/dbConnector_Sqlite.js");
 
 /* GET home page. */
 router.get("/", async function (req, res) {
@@ -40,7 +40,7 @@ router.get('/draft', async function(req, res, next) {
   // 查询用户的邮件
   const userid  = req.session.userId;
   const maxLength = 25;
-  console.log(userid);
+  // console.log(userid);
   // 使用数据库模块进行登录验证
   const emails = await checkDrafts(userid);
   emails.forEach((emails) => {
@@ -48,7 +48,7 @@ router.get('/draft', async function(req, res, next) {
       emails.content = emails.content.substring(0, maxLength) + '...'; // 添加省略号
     }
   });
-  console.log(emails);
+  // console.log(emails);
   // 渲染邮件页面，并将邮件数据传递给视图
   res.render('draft', {emails: emails})
 })
@@ -147,12 +147,13 @@ router.get('/deletedemails',async function(req, res, next) {
 // 在 index.js 中添加路由以批量删除邮件
 router.post('/deleteEmails', async function(req, res, next) {
   const emailIds = req.body.emailIds; // 从请求中获取要删除的邮件ID数组
+  // console.log(emailIds);
   const successCount = await deleteEmails(emailIds); // 调用批量删除邮件的函数
 
   if (successCount > 0) {
-    res.send({ success: true, message: `${successCount} 封邮件删除成功` });
+    res.send({ success: true, message: `${successCount} emails successfully deleted` });
   } else {
-    res.send({ success: false, message: '无法删除任何邮件' });
+    res.send({ success: false, message: 'delete failed' });
   }
 });
 
@@ -186,7 +187,7 @@ router.post('/sendemail',async function(req, res, next) {
   const { receiver, title, content } = req.body;
   const obj = await getReceiver(receiver);
   const receiver_id = obj.id;
-  console.log(receiver_id);
+  console.log(userid);
   const created_time = new Date(); // 创建邮件的时间
   const sending_time = new Date(); // 发送邮件的时间，这里假设创建和发送时间是相同的
   const email = await sendemail(title, userid, created_time, sending_time, content,  receiver_id);

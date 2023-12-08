@@ -137,7 +137,7 @@ async function checksentemails(user_id) {
 
     // 从 folders 文档中提取所有的 email_id
     const emailIds = folders.map(folder => folder.email_id);
-    // console.log(emailIds); // 打印查询结果
+    console.log(emailIds); // 打印查询结果
 
     // 然后，使用这些 email_id 查询 emails 集合
     const emailsQuery = { 'id': { $in: emailIds } };
@@ -212,9 +212,11 @@ async function sendemail(title, sender_id, created_time, sending_time, content, 
     await client.connect();
     const db = client.db(databaseName);
     const collection = db.collection('email');
+    const folderscollection = db.collection('folders');
 
     const newObjectId = new ObjectId();
 
+    console.log(sender_id);
     // 创建邮件文档对象
     const emailDocument = {
       id: newObjectId,
@@ -229,6 +231,14 @@ async function sendemail(title, sender_id, created_time, sending_time, content, 
     // 插入邮件文档到 emails 集合
     const result = await collection.insertOne(emailDocument);
 
+    const email = {
+      email_id: newObjectId,
+      foldername:"sent",
+      user_id:new ObjectId(sender_id),
+    }
+
+    const folderresult = await folderscollection.insertOne(email);
+    
     console.log(`Email sent with the following id: ${result.insertedId}`);
     return result.insertedId; // 返回插入的邮件 ID
   } catch (error) {
@@ -258,6 +268,36 @@ async function findEmail(email_id) {
   }
 }
 
+async function deleteEmails(emailIds) {
+  // console.log(emailIds);
+  const client = new MongoClient(uri);
+  let successCount = 0;
+  try {
+    await client.connect();
+    const db = client.db(databaseName);
+    const collectionEmails = db.collection('email');
+    const collectionMapping = db.collection('folders');
+
+    // Delete records from Emails collection
+    for (const emailId of emailIds) {
+      await collectionEmails.deleteOne({ id: new ObjectId(emailId) });
+    }
+
+    // Delete records from EmailFolderMapping collection
+    for (const emailId of emailIds) {
+      await collectionMapping.deleteOne({ email_id: new ObjectId(emailId) });
+    }
+    successCount = emailIds.length;
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    await client.close();
+    console.log('Connection closed');
+  }
+
+  return successCount; // Return the number of successfully deleted emails
+}
+
 
 module.exports = {
   verifyLogin,
@@ -268,4 +308,5 @@ module.exports = {
   sendemail,
   findEmail,
   getReceiver,
+  deleteEmails,
 }

@@ -74,21 +74,21 @@
     <div class="container">
         <div class="sidebar">
             <ul>
-                <li><a href="writingemail">写邮件</a></li>
-                <li><a href="receivedemails">收件箱</a></li>
-                <li><a href="draft">草稿箱</a></li>
+                <li><a href="writingemail">writing an email</a></li>
+                <li><a href="receivedemails">inbox</a></li>
+                <li><a href="draft">draft</a></li>
                 <!-- <li><a href="trashemails">垃圾箱</a></li> -->
-                <li><a href="sentemails">已发送</a></li>
+                <li><a href="sentemails">sentemails</a></li>
                 <!-- <li><a href="deletedemails">已删除</a></li> -->
                 <!-- <li><a href="#">分类</a></li> -->
-                <li><a href="contacts">通讯录</a></li>
+                <li><a href="contacts">contacts</a></li>
             </ul>
         </div>
 
         <div class="content">
-            <h1>草稿箱</h1>
+            <h1>dratfs</h1>
             <div class="button-group">
-                <button id="deleteButton" onclick="deleteSelectedEmails()">删除</button>
+                <button id="deleteButton" onclick="deleteSelectedEmails()">delete</button>
                 <!-- 添加选择所有的复选框 -->
                 <input type="checkbox" id="selectAll" onchange="toggleSelectAll()" />
             </div>
@@ -96,7 +96,7 @@
                 <% emails.forEach(function(email) { %>
                     <li class="email-item">
                         <!-- 修改邮件项的复选框 -->
-                        <input type="checkbox" name="selectedEmails" value="<%= email.email_id %>" />
+                        <input type="checkbox" name="selectedEmails" value="<%= email.id %>" />
 
                         <div class="email-details">
                             <h3>
