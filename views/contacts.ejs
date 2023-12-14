@@ -64,21 +64,22 @@
     <div class="container">
         <div class="sidebar">
             <ul>
-                <li><a href="writingemail">writing an email</a></li>
-                <li><a href="receivedemails">inbox</a></li>
-                <li><a href="draft">draft</a></li>
+                <li><a href="writingemail">写邮件</a></li>
+                <li><a href="receivedemails">收件箱</a></li>
+                <li><a href="draft">草稿箱</a></li>
                 <!-- <li><a href="trashemails">垃圾箱</a></li> -->
-                <li><a href="sentemails">sentemails</a></li>
+                <li><a href="sentemails">已发送</a></li>
                 <!-- <li><a href="deletedemails">已删除</a></li> -->
                 <!-- <li><a href="#">分类</a></li> -->
-                <li><a href="contacts">contacts</a></li>
+                <li><a href="contacts">通讯录</a></li>
+
             </ul>
         </div>
         <div class="content">
             <h1>Contacts</h1>
-            <!-- <div class="button-group">
-                <button id="addButton" onclick="toggleFormVisibility()">Add a contact</button>
-            </div> -->
+            <div class="button-group">
+                <!-- <button id="addButton" onclick="toggleFormVisibility()">Add a contact</button> -->
+            </div>
 
             <!-- Hidden form for adding a contact -->
             <form id="addContactForm" style="display: none;">
@@ -90,12 +91,18 @@
                 <button type="button" onclick="submitForm()">Add Contact</button>
             </form>
 
-            <ul>
-                <% contacts.forEach(function(contact) { %>
-                    <li class="email-item">
-                        <!-- 修改邮件项的复选框 -->
-                        <!-- <button id="writingemailButton" onclick="writingemail">writing an email</button> -->
+            <!-- 编辑联系人的隐藏表单 -->
+            <form id="editContactForm" style="display: none;">
+                <input type="hidden" id="editContactId">
+                <input type="tel" id="editPhoneInput" placeholder="Phone" required>
+                <input type="text" id="editAddressInput" placeholder="Address" required>
+                <button type="button" onclick="submitEditForm()">Save Changes</button>
+            </form>
 
+            <!-- 联系人列表 -->
+            <ul id="contactList">
+                <% contacts.forEach(function(contact) { %>
+                    <li class="email-item" id="contact-<%= contact.id %>">
                         <p>
                             <%= contact.username %>
                         </p>
@@ -103,7 +110,7 @@
                             <%= contact.email %>
                         </p>
                         <p>
-                            <%= contact.phone %>
+                            <%= contact.cellphone %>
                         </p>
                         <p>
                             <%= contact.address %>
@@ -111,6 +118,7 @@
                         <p>
                             <%= contact.birthday %>
                         </p>
+                        <button onclick="editContact('<%= contact.id %>')">Edit</button>
                     </li>
                     <% }); %>
             </ul>
@@ -119,51 +127,70 @@
 
 
     <script>
+        var currentEditingId = null; // 用于跟踪当前正在编辑的联系人ID
+
         function toggleFormVisibility() {
             var form = document.getElementById("addContactForm");
             form.style.display = form.style.display === "none" ? "block" : "none";
         }
 
-        function submitForm() {
-            var username = document.getElementById("usernameInput").value.trim();
-            var email = document.getElementById("emailInput").value.trim();
-            var phone = document.getElementById("phoneInput").value.trim();
-            var address = document.getElementById("addressInput").value.trim();
-            var birthday = document.getElementById("birthdayInput").value.trim();
+        function editContact(contactId) {
+            var form = document.getElementById('editContactForm');
+            var isSameContact = currentEditingId === contactId;
+            // console.log(contactId)
 
-            // Validate input
-            if (username && email && phone && address && birthday) {
-                // Create a new contact object
-                var newContact = {
-                    username: username,
-                    email: email,
-                    phone: phone,
-                    address: address,
-                    birthday: birthday
-                };
+            // 获取点击的联系人的信息
+            var contactItem = document.getElementById('contact-' + contactId);
+            var contactDetails = contactItem.getElementsByTagName('p');
 
-                // Send a POST request to the server
-                fetch('/addcontact', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(newContact),
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Success:', data);
-                        // You can handle the response from the server here
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                    });
+            // 填充表单
+            document.getElementById('editPhoneInput').value = contactDetails[2].innerText;
+            document.getElementById('editAddressInput').value = contactDetails[3].innerText;
+            document.getElementById('editContactId').value = contactId;
+            // console.log(document.getElementById('editContactId').value)
 
-                // Hide the form after sending the data
-                toggleFormVisibility();
+            // 根据是否是同一个联系人来显示或隐藏表单
+            if (form.style.display === 'block' && isSameContact) {
+                form.style.display = 'none';
+                currentEditingId = null;
             } else {
-                alert("Please fill in all contact information.");
+                form.style.display = 'block';
+                currentEditingId = contactId;
             }
+        }
+
+
+        function submitEditForm() {
+            var contactId = document.getElementById('editContactId').value;
+            console.log(contactId);
+            var updatedContact = {
+                id: contactId,
+                phone: document.getElementById('editPhoneInput').value,
+                address: document.getElementById('editAddressInput').value,
+            };
+            fetch('/updateContact', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedContact),
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                if (response.headers.get('content-type').indexOf('application/json') === -1) {
+                    throw new Error('Response not JSON');
+                }
+                return response.json();
+            })
+                .then(data => {
+                    console.log('Success:', data);
+                    // 更新页面上的联系人信息
+                    // 隐藏编辑表单
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
         }
     </script>
 

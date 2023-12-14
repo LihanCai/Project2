@@ -163,7 +163,7 @@ async function checkContacts(user_id) {
 
     // 首先，根据 user_id 查找对应的contacts
     const user = await contactsCollection.findOne({ 'id': new ObjectId(user_id) });
-    console.log(user.contacts);
+    // console.log(user.contacts);
     if (user) {
       const contactsQuery = { 'id': { $in: user.contacts } };
 
@@ -298,6 +298,36 @@ async function deleteEmails(emailIds) {
   return successCount; // Return the number of successfully deleted emails
 }
 
+async function updateContact(phone, address, userId) {
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+
+    const db = client.db(databaseName);
+    const contactsCollection = db.collection('user');
+
+    const filter = {
+      id: new ObjectId(userId),
+    };
+
+    const update = {
+      $set: {
+        cellphone: phone,
+        address: address,
+      },
+    };
+
+    const result = await contactsCollection.updateOne(filter, update);
+
+    if (result.matchedCount === 0) {
+      throw new Error('Contact not found'); // 如果没有匹配的文档，则抛出错误
+    }
+
+    console.log('Contact updated successfully');
+  } finally {
+    client.close();
+  }
+}
 
 module.exports = {
   verifyLogin,
@@ -309,4 +339,5 @@ module.exports = {
   findEmail,
   getReceiver,
   deleteEmails,
+  updateContact,
 }

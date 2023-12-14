@@ -1,6 +1,6 @@
 let express = require("express");
 let router = express.Router();
-const { deleteEmails,getReceiver,sendemail,checkContacts,checksentemails,findEmail, checkDrafts, checkReceivedEmails,verifyLogin } = require("../db/dbConnector_Sqlite.js");
+const { updateContact,deleteEmails,getReceiver,sendemail,checkContacts,checksentemails,findEmail, checkDrafts, checkReceivedEmails,verifyLogin } = require("../db/dbConnector_Sqlite.js");
 
 /* GET home page. */
 router.get("/", async function (req, res) {
@@ -174,7 +174,7 @@ router.get('/contacts',async function(req, res, next) {
   const userid  = req.session.userId;
   // 使用数据库模块进行登录验证
   const contacts = await checkContacts(userid);
-  console.log(contacts);
+  // console.log(contacts);
   // 渲染邮件页面，并将邮件数据传递给视图
   res.render('contacts', {contacts: contacts})
 })
@@ -195,4 +195,22 @@ router.post('/sendemail',async function(req, res, next) {
   res.render('writingemail', {currentPage: 'writingemail'})
 })
 
+router.post('/updateContact', async function(req, res, next) {
+  try {
+    const { phone, address, id } = req.body;
+  
+    await updateContact(phone, address, id);
+
+    const updatedContacts = await checkContacts(id);
+
+    // 返回 JSON 格式的响应
+    res.json({ contacts: updatedContacts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
 module.exports = router;
+
